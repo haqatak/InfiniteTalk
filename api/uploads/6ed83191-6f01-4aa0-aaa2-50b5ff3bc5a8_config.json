@@ -1,0 +1,7 @@
+{
+  "prompt": "A person speaking naturally with clear lip sync and facial expressions, professional video quality with natural lighting and smooth motion",
+  "cond_video": "uploads/6ed83191-6f01-4aa0-aaa2-50b5ff3bc5a8_image.jpeg",
+  "cond_audio": {
+    "person1": "uploads/6ed83191-6f01-4aa0-aaa2-50b5ff3bc5a8_audio.mp3"
+  }
+}

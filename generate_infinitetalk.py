@@ -20,7 +20,7 @@ import wan
 from wan.configs import SIZE_CONFIGS, SUPPORTED_SIZES, WAN_CONFIGS
 from wan.utils.utils import str2bool, is_video, split_wav_librosa
 from wan.utils.multitalk_utils import save_video_ffmpeg
-from kokoro import KPipeline
+# from kokoro import KPipeline
 from transformers import Wav2Vec2FeatureExtractor
 from src.audio_analysis.wav2vec2 import Wav2Vec2Model
 from wan.utils.segvideo import shot_detect
@@ -275,7 +275,7 @@ def _parse_args():
     return args
 
 def custom_init(device, wav2vec):    
-    audio_encoder = Wav2Vec2Model.from_pretrained(wav2vec, local_files_only=True).to(device)
+    audio_encoder = Wav2Vec2Model.from_pretrained(wav2vec, local_files_only=True, attn_implementation="eager").to(device)
     audio_encoder.feature_extractor._freeze_parameters()
     wav2vec_feature_extractor = Wav2Vec2FeatureExtractor.from_pretrained(wav2vec, local_files_only=True)
     return wav2vec_feature_extractor, audio_encoder
@@ -380,8 +380,10 @@ def audio_prepare_single(audio_path, sample_rate=16000):
 
 def process_tts_single(text, save_dir, voice1):    
     s1_sentences = []
+    
+    raise NotImplementedError("TTS functionality disabled. Please provide audio files directly.")
 
-    pipeline = KPipeline(lang_code='a', repo_id='weights/Kokoro-82M')
+    # pipeline = KPipeline(lang_code='a', repo_id='weights/Kokoro-82M')
 
     voice_tensor = torch.load(voice1, weights_only=True)
     generator = pipeline(
@@ -407,8 +409,10 @@ def process_tts_multi(text, save_dir, voice1, voice2):
     
     s1_sentences = []
     s2_sentences = []
+    
+    raise NotImplementedError("TTS functionality disabled. Please provide audio files directly.")
 
-    pipeline = KPipeline(lang_code='a', repo_id='weights/Kokoro-82M')
+    # pipeline = KPipeline(lang_code='a', repo_id='weights/Kokoro-82M')
     for idx, (speaker, content) in enumerate(matches):
         if speaker == '1':
             voice_tensor = torch.load(voice1, weights_only=True)

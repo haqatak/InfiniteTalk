@@ -1,0 +1,1652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>InfiniteTalk - Audio-Driven Video Generation</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #2c3e50;
+        }
+        
+        .header {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .header-content {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .logo h1 {
+            font-size: 2em;
+            font-weight: 700;
+            background: linear-gradient(45deg, #3498db, #9b59b6);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .stats-header {
+            display: flex;
+            gap: 20px;
+        }
+        
+        .stat-item {
+            text-align: center;
+            padding: 8px 16px;
+            background: rgba(52, 152, 219, 0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(52, 152, 219, 0.2);
+        }
+        
+        .stat-number {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #3498db;
+        }
+        
+        .stat-label {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .main-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 30px 20px;
+            display: grid;
+            grid-template-columns: 400px 1fr;
+            gap: 30px;
+            min-height: calc(100vh - 120px);
+        }
+        
+        .left-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .card-title {
+            font-size: 1.3em;
+            font-weight: 600;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #2c3e50;
+        }
+        
+        .upload-section {
+            position: sticky;
+            top: 140px;
+        }
+        
+        .file-input-group {
+            margin-bottom: 20px;
+        }
+        
+        .file-input-label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #2c3e50;
+        }
+        
+        .file-drop-zone {
+            border: 2px dashed #3498db;
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: rgba(52, 152, 219, 0.05);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .file-drop-zone:hover {
+            border-color: #2980b9;
+            background: rgba(52, 152, 219, 0.1);
+            transform: translateY(-2px);
+        }
+        
+        .file-drop-zone.dragover {
+            border-color: #27ae60;
+            background: rgba(39, 174, 96, 0.1);
+            transform: scale(1.02);
+        }
+        
+        .file-drop-zone input[type="file"] {
+            position: absolute;
+            opacity: 0;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+        
+        .file-drop-content {
+            pointer-events: none;
+        }
+        
+        .file-icon {
+            font-size: 2.5em;
+            color: #3498db;
+            margin-bottom: 10px;
+        }
+        
+        .file-text {
+            font-weight: 500;
+            color: #2c3e50;
+        }
+        
+        .file-subtext {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-top: 5px;
+        }
+        
+        .file-selected {
+            background: rgba(39, 174, 96, 0.1);
+            border-color: #27ae60;
+        }
+        
+        .file-selected .file-icon {
+            color: #27ae60;
+        }
+        
+        .selected-file-info {
+            margin-top: 12px;
+            padding: 10px;
+            background: rgba(39, 174, 96, 0.1);
+            border-radius: 8px;
+            font-size: 0.9em;
+            color: #27ae60;
+            display: none;
+        }
+        
+        .prompt-textarea {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px 16px;
+            border: 2px solid #e1e8ed;
+            border-radius: 12px;
+            font-size: 0.95em;
+            font-family: inherit;
+            line-height: 1.5;
+            resize: vertical;
+            transition: all 0.3s ease;
+            background: #ffffff;
+            color: #2c3e50;
+        }
+        
+        .prompt-textarea:focus {
+            outline: none;
+            border-color: #3498db;
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+            background: #fafbfc;
+        }
+        
+        .prompt-textarea::placeholder {
+            color: #95a5a6;
+            font-style: italic;
+        }
+        
+        .prompt-help {
+            margin-top: 8px;
+            color: #7f8c8d;
+            font-size: 0.85em;
+            line-height: 1.4;
+        }
+        
+        .prompt-help small {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .prompt-help small::before {
+            content: "💡";
+            font-size: 1em;
+        }
+        
+        .generate-btn {
+            width: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            color: white;
+            border: none;
+            padding: 16px 24px;
+            border-radius: 12px;
+            font-size: 1.1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .generate-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(52, 152, 219, 0.3);
+        }
+        
+        .generate-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .generate-btn .loading-spinner {
+            display: none;
+            margin-right: 8px;
+        }
+        
+        .generate-btn.loading .loading-spinner {
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .right-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        
+        .queue-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 15px;
+        }
+        
+        .stat-card {
+            background: linear-gradient(45deg, #f8f9fa, #ffffff);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            border: 1px solid rgba(52, 152, 219, 0.1);
+            transition: transform 0.2s ease;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stat-card .number {
+            font-size: 2.2em;
+            font-weight: 700;
+            margin-bottom: 5px;
+        }
+        
+        .stat-card .label {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        
+        .stat-card.queue .number { color: #f39c12; }
+        .stat-card.processing .number { color: #3498db; }
+        .stat-card.completed .number { color: #27ae60; }
+        .stat-card.failed .number { color: #e74c3c; }
+        
+        .requests-container {
+            max-height: 600px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .requests-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .requests-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .requests-container::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        
+        .request-item {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border-left: 4px solid #ecf0f1;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+        
+        .request-item:hover {
+            transform: translateX(5px);
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        
+        .request-item.queued {
+            border-left-color: #f39c12;
+            background: linear-gradient(135deg, #fef9e7 0%, #ffffff 100%);
+        }
+        
+        .request-item.processing {
+            border-left-color: #3498db;
+            background: linear-gradient(135deg, #ebf3fd 0%, #ffffff 100%);
+            animation: pulse-border 2s infinite;
+        }
+        
+        .request-item.completed {
+            border-left-color: #27ae60;
+            background: linear-gradient(135deg, #eafaf1 0%, #ffffff 100%);
+        }
+        
+        .request-item.failed {
+            border-left-color: #e74c3c;
+            background: linear-gradient(135deg, #fdeaea 0%, #ffffff 100%);
+        }
+        
+        @keyframes pulse-border {
+            0%, 100% { border-left-width: 4px; }
+            50% { border-left-width: 6px; }
+        }
+        
+        .request-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        
+        .request-id {
+            font-family: 'Courier New', monospace;
+            font-size: 0.9em;
+            color: #7f8c8d;
+            background: rgba(127, 140, 141, 0.1);
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .request-status {
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.8em;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .status-queued {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .status-processing {
+            background: #3498db;
+            color: white;
+        }
+        
+        .status-completed {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .status-failed {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .request-message {
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 500;
+        }
+        
+        .request-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.85em;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        
+        .request-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(236, 240, 241, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(45deg, #3498db, #2980b9);
+            width: 0%;
+            transition: width 0.5s ease;
+            border-radius: 3px;
+        }
+        
+        .progress-bar.indeterminate {
+            animation: indeterminate 2s infinite;
+        }
+        
+        @keyframes indeterminate {
+            0% { width: 0%; margin-left: 0%; }
+            50% { width: 50%; margin-left: 25%; }
+            100% { width: 0%; margin-left: 100%; }
+        }
+        
+        .request-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+        }
+        
+        .action-btn {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.9em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .download-btn {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .download-btn:hover {
+            background: #229954;
+            transform: translateY(-1px);
+        }
+        
+        .retry-btn {
+            background: #f39c12;
+            color: white;
+        }
+        
+        .retry-btn:hover {
+            background: #e67e22;
+            transform: translateY(-1px);
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px;
+            color: #7f8c8d;
+        }
+        
+        .empty-state i {
+            font-size: 3em;
+            margin-bottom: 15px;
+            opacity: 0.5;
+        }
+        
+        .connection-indicator {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 10px 16px;
+            border-radius: 8px;
+            color: white;
+            font-weight: 600;
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        .connection-indicator.connected {
+            background: #27ae60;
+        }
+        
+        .connection-indicator.disconnected {
+            background: #e74c3c;
+        }
+        
+        .connection-indicator.connecting {
+            background: #f39c12;
+        }
+        
+        .notification {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            padding: 16px 24px;
+            background: #2c3e50;
+            color: white;
+            border-radius: 8px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+            z-index: 1001;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            max-width: 400px;
+        }
+        
+        .notification.show {
+            opacity: 1;
+        }
+        
+        .notification.success {
+            background: #27ae60;
+        }
+        
+        .notification.error {
+            background: #e74c3c;
+        }
+        
+        .notification.warning {
+            background: #f39c12;
+        }
+        
+        .model-status {
+            background: rgba(52, 152, 219, 0.1);
+            border: 1px solid rgba(52, 152, 219, 0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        
+        .model-status-title {
+            font-weight: 600;
+            color: #3498db;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .model-info {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 1200px) {
+            .main-container {
+                grid-template-columns: 350px 1fr;
+                gap: 20px;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .main-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                padding: 20px 15px;
+            }
+            
+            .upload-section {
+                position: static;
+            }
+            
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+            
+            .stats-header {
+                justify-content: center;
+            }
+            
+            .queue-stats {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .header-content {
+                padding: 0 15px;
+            }
+            
+            .logo h1 {
+                font-size: 1.5em;
+            }
+            
+            .card {
+                padding: 20px;
+            }
+            
+            .queue-stats {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        /* Completed Videos Section */
+        .completed-videos-section {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 30px 0;
+            margin-top: 30px;
+        }
+        
+        .completed-videos-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            max-height: 500px;
+            overflow-y: auto;
+            padding-right: 5px;
+        }
+        
+        .completed-videos-container::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .completed-videos-container::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 3px;
+        }
+        
+        .completed-videos-container::-webkit-scrollbar-thumb {
+            background: #3498db;
+            border-radius: 3px;
+        }
+        
+        .video-item {
+            background: #ffffff;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(52, 152, 219, 0.1);
+        }
+        
+        .video-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+        }
+        
+        .video-thumbnail {
+            width: 100%;
+            height: 160px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+        
+        .video-thumbnail video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+        }
+        
+        .video-thumbnail .play-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.7);
+            color: white;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        
+        .video-thumbnail .play-overlay:hover {
+            background: rgba(0, 0, 0, 0.9);
+            transform: translate(-50%, -50%) scale(1.1);
+        }
+        
+        .video-info {
+            margin-bottom: 12px;
+        }
+        
+        .video-title {
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 4px;
+            font-size: 0.9em;
+        }
+        
+        .video-meta {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+        
+        .video-prompt {
+            font-size: 0.85em;
+            color: #5d6d7e;
+            line-height: 1.4;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+            margin-bottom: 12px;
+            max-height: 60px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .video-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .video-action-btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            text-decoration: none;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .video-download-btn {
+            background: #27ae60;
+            color: white;
+        }
+        
+        .video-download-btn:hover {
+            background: #229954;
+            transform: translateY(-1px);
+        }
+        
+        .video-share-btn {
+            background: #3498db;
+            color: white;
+        }
+        
+        .video-share-btn:hover {
+            background: #2980b9;
+            transform: translateY(-1px);
+        }
+        
+        .video-delete-btn {
+            background: #e74c3c;
+            color: white;
+        }
+        
+        .video-delete-btn:hover {
+            background: #c0392b;
+            transform: translateY(-1px);
+        }
+        
+        @media (max-width: 768px) {
+            .completed-videos-container {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+                gap: 15px;
+            }
+            
+            .completed-videos-section {
+                padding: 20px 0;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .completed-videos-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Connection Status Indicator -->
+    <div id="connectionStatus" class="connection-indicator disconnected">
+        <i class="fas fa-wifi"></i>
+        <span>Connecting...</span>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-video" style="font-size: 2em; color: #3498db;"></i>
+                <h1>InfiniteTalk</h1>
+            </div>
+            <div class="stats-header">
+                <div class="stat-item">
+                    <div class="stat-number" id="headerQueueCount">0</div>
+                    <div class="stat-label">Queued</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="headerProcessingCount">0</div>
+                    <div class="stat-label">Processing</div>
+                </div>
+                <div class="stat-item">
+                    <div class="stat-number" id="headerCompletedCount">0</div>
+                    <div class="stat-label">Completed</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <!-- Left Panel - Upload Section -->
+        <div class="left-panel">
+            <div class="card upload-section">
+                <h2 class="card-title">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                    Generate Video
+                </h2>
+                
+                <form id="uploadForm" enctype="multipart/form-data">
+                    <div class="file-input-group">
+                        <label class="file-input-label">
+                            <i class="fas fa-image"></i> Reference Image
+                        </label>
+                        <div class="file-drop-zone" id="imageDropZone">
+                            <input type="file" id="imageInput" name="image" accept="image/*" required>
+                            <div class="file-drop-content">
+                                <div class="file-icon">
+                                    <i class="fas fa-image"></i>
+                                </div>
+                                <div class="file-text">Click to select or drag & drop image</div>
+                                <div class="file-subtext">PNG, JPG, JPEG supported</div>
+                            </div>
+                            <div class="selected-file-info" id="imageFileInfo"></div>
+                        </div>
+                    </div>
+
+                    <div class="file-input-group">
+                        <label class="file-input-label">
+                            <i class="fas fa-volume-up"></i> Audio File
+                        </label>
+                        <div class="file-drop-zone" id="audioDropZone">
+                            <input type="file" id="audioInput" name="audio" accept="audio/*" required>
+                            <div class="file-drop-content">
+                                <div class="file-icon">
+                                    <i class="fas fa-music"></i>
+                                </div>
+                                <div class="file-text">Click to select or drag & drop audio</div>
+                                <div class="file-subtext">WAV, MP3, FLAC supported</div>
+                            </div>
+                            <div class="selected-file-info" id="audioFileInfo"></div>
+                        </div>
+                    </div>
+
+                    <div class="file-input-group">
+                        <label class="file-input-label">
+                            <i class="fas fa-pen-fancy"></i> Prompt (Optional)
+                        </label>
+                        <textarea 
+                            id="promptInput" 
+                            name="prompt" 
+                            placeholder="Describe the video you want to generate (e.g., 'A person speaking naturally with clear lip sync and facial expressions, professional video quality with natural lighting and smooth motion')"
+                            rows="3"
+                            class="prompt-textarea"
+                        ></textarea>
+                        <div class="prompt-help">
+                            <small>Leave empty for default prompt. Describe the desired video style, quality, and appearance.</small>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="generate-btn" id="generateBtn">
+                        <i class="fas fa-spinner loading-spinner"></i>
+                        <i class="fas fa-play"></i>
+                        Generate Video
+                    </button>
+                </form>
+
+                <div class="model-status">
+                    <div class="model-status-title">
+                        <i class="fas fa-cog"></i>
+                        Model Configuration
+                    </div>
+                    <div class="model-info">
+                        Using lightx2v LoRA with 4-step inference for fast generation.
+                        <br>Model: Wan2.1-I2V-14B-480P with quantization optimizations.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - Queue Status -->
+        <div class="right-panel">
+            <!-- Queue Statistics -->
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-chart-bar"></i>
+                    Queue Statistics
+                </h2>
+                <div class="queue-stats">
+                    <div class="stat-card queue">
+                        <div class="number" id="queueCount">0</div>
+                        <div class="label">Queued</div>
+                    </div>
+                    <div class="stat-card processing">
+                        <div class="number" id="processingCount">0</div>
+                        <div class="label">Processing</div>
+                    </div>
+                    <div class="stat-card completed">
+                        <div class="number" id="completedCount">0</div>
+                        <div class="label">Completed</div>
+                    </div>
+                    <div class="stat-card failed">
+                        <div class="number" id="failedCount">0</div>
+                        <div class="label">Failed</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Requests -->
+            <div class="card">
+                <h2 class="card-title">
+                    <i class="fas fa-tasks"></i>
+                    Active Requests
+                </h2>
+                <div class="requests-container" id="requestsContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No active requests</p>
+                        <small>Upload files to start generating videos</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Completed Videos Section -->
+    <div class="completed-videos-section">
+        <div class="main-container">
+            <div class="card" style="grid-column: 1 / -1;">
+                <h2 class="card-title">
+                    <i class="fas fa-video"></i>
+                    Completed Videos
+                </h2>
+                <div class="completed-videos-container" id="completedVideosContainer">
+                    <div class="empty-state">
+                        <i class="fas fa-film"></i>
+                        <p>No completed videos yet</p>
+                        <small>Generated videos will appear here</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification System -->
+    <div id="notification" class="notification"></div>
+    
+    <script>
+        // WebSocket connection
+        let ws;
+        let reconnectInterval;
+        let requestsData = [];
+        let completedRequests = 0;
+        let failedRequests = 0;
+        
+        // DOM elements
+        const uploadForm = document.getElementById('uploadForm');
+        const imageInput = document.getElementById('imageInput');
+        const audioInput = document.getElementById('audioInput');
+        const promptInput = document.getElementById('promptInput');
+        const generateBtn = document.getElementById('generateBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const notification = document.getElementById('notification');
+        const requestsContainer = document.getElementById('requestsContainer');
+        const completedVideosContainer = document.getElementById('completedVideosContainer');
+        
+        // File drop zones
+        const imageDropZone = document.getElementById('imageDropZone');
+        const audioDropZone = document.getElementById('audioDropZone');
+        const imageFileInfo = document.getElementById('imageFileInfo');
+        const audioFileInfo = document.getElementById('audioFileInfo');
+        
+        // Stats elements
+        const queueCount = document.getElementById('queueCount');
+        const processingCount = document.getElementById('processingCount');
+        const completedCount = document.getElementById('completedCount');
+        const failedCount = document.getElementById('failedCount');
+        
+        // Header stats
+        const headerQueueCount = document.getElementById('headerQueueCount');
+        const headerProcessingCount = document.getElementById('headerProcessingCount');
+        const headerCompletedCount = document.getElementById('headerCompletedCount');
+        
+        // File drag and drop handlers
+        function setupFileDropZone(dropZone, fileInput, fileInfo) {
+            // Prevent default drag behaviors
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, preventDefaults, false);
+                document.body.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            // Highlight drop zone when item is dragged over it
+            ['dragenter', 'dragover'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+            });
+            
+            // Handle dropped files
+            dropZone.addEventListener('drop', handleDrop, false);
+            
+            // Handle click to open file dialog
+            dropZone.addEventListener('click', () => fileInput.click());
+            
+            // Handle file selection
+            fileInput.addEventListener('change', () => updateFileInfo(fileInput, dropZone, fileInfo));
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            function handleDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                fileInput.files = files;
+                updateFileInfo(fileInput, dropZone, fileInfo);
+            }
+            
+            function updateFileInfo(input, zone, info) {
+                const file = input.files[0];
+                if (file) {
+                    zone.classList.add('file-selected');
+                    info.style.display = 'block';
+                    info.innerHTML = `
+                        <i class="fas fa-check-circle"></i>
+                        <strong>${file.name}</strong> (${formatFileSize(file.size)})
+                    `;
+                } else {
+                    zone.classList.remove('file-selected');
+                    info.style.display = 'none';
+                }
+            }
+        }
+        
+        // Initialize drop zones
+        setupFileDropZone(imageDropZone, imageInput, imageFileInfo);
+        setupFileDropZone(audioDropZone, audioInput, audioFileInfo);
+        
+        // Format file size
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+        
+        // Form submission
+        uploadForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const imageFile = imageInput.files[0];
+            const audioFile = audioInput.files[0];
+            
+            if (!imageFile || !audioFile) {
+                showNotification('Please select both image and audio files', 'error');
+                return;
+            }
+            
+            // Check file sizes
+            if (imageFile.size > 10 * 1024 * 1024) {
+                showNotification('Image file too large (max 10MB)', 'error');
+                return;
+            }
+            
+            if (audioFile.size > 50 * 1024 * 1024) {
+                showNotification('Audio file too large (max 50MB)', 'error');
+                return;
+            }
+            
+            generateBtn.disabled = true;
+            generateBtn.classList.add('loading');
+            generateBtn.innerHTML = `
+                <i class="fas fa-spinner loading-spinner"></i>
+                Uploading...
+            `;
+            
+            try {
+                const formData = new FormData();
+                formData.append('image', imageFile);
+                formData.append('audio', audioFile);
+                
+                // Add prompt if provided
+                const prompt = promptInput.value.trim();
+                if (prompt) {
+                    formData.append('prompt', prompt);
+                }
+                
+                const response = await fetch('/api/generate', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const result = await response.json();
+                
+                if (response.ok) {
+                    showNotification(`Request submitted! ID: ${result.request_id.substring(0, 8)}`, 'success');
+                    uploadForm.reset();
+                    imageFileInfo.style.display = 'none';
+                    audioFileInfo.style.display = 'none';
+                    imageDropZone.classList.remove('file-selected');
+                    audioDropZone.classList.remove('file-selected');
+                    promptInput.value = '';
+                } else {
+                    showNotification(result.detail || 'Error submitting request', 'error');
+                }
+            } catch (error) {
+                showNotification('Network error: ' + error.message, 'error');
+            } finally {
+                generateBtn.disabled = false;
+                generateBtn.classList.remove('loading');
+                generateBtn.innerHTML = `
+                    <i class="fas fa-play"></i>
+                    Generate Video
+                `;
+            }
+        });
+        
+        // WebSocket connection
+        function connectWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const host = window.location.host;
+            ws = new WebSocket(`${protocol}//${host}/ws`);
+            
+            ws.onopen = function() {
+                console.log('WebSocket connected');
+                updateConnectionStatus('connected');
+                
+                if (reconnectInterval) {
+                    clearInterval(reconnectInterval);
+                    reconnectInterval = null;
+                }
+            };
+            
+            ws.onmessage = function(event) {
+                const data = JSON.parse(event.data);
+                handleWebSocketMessage(data);
+            };
+            
+            ws.onclose = function() {
+                console.log('WebSocket disconnected');
+                updateConnectionStatus('disconnected');
+                
+                // Reconnect after 3 seconds
+                if (!reconnectInterval) {
+                    reconnectInterval = setInterval(connectWebSocket, 3000);
+                }
+            };
+            
+            ws.onerror = function(error) {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus('disconnected');
+            };
+        }
+        
+        // Update connection status
+        function updateConnectionStatus(status) {
+            const statusElement = connectionStatus;
+            const span = statusElement.querySelector('span');
+            const icon = statusElement.querySelector('i');
+            
+            statusElement.className = `connection-indicator ${status}`;
+            
+            switch (status) {
+                case 'connected':
+                    span.textContent = 'Connected';
+                    icon.className = 'fas fa-wifi';
+                    break;
+                case 'disconnected':
+                    span.textContent = 'Disconnected';
+                    icon.className = 'fas fa-wifi';
+                    break;
+                case 'connecting':
+                    span.textContent = 'Connecting...';
+                    icon.className = 'fas fa-spinner fa-spin';
+                    break;
+            }
+        }
+        
+        // Handle WebSocket messages
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'queue_update':
+                    updateQueueDisplay(data.data);
+                    break;
+                case 'status_update':
+                    updateRequestStatus(data.data);
+                    break;
+                case 'progress_update':
+                    updateRequestProgress(data.data);
+                    break;
+                case 'pong':
+                    // Heartbeat response
+                    break;
+                default:
+                    console.log('Unknown message type:', data.type);
+            }
+        }
+        
+        // Update queue display
+        function updateQueueDisplay(queueData) {
+            requestsData = queueData.requests || [];
+            
+            // Update stats
+            const queuedCount = requestsData.filter(r => r.status === 'queued').length;
+            const processingCnt = requestsData.filter(r => r.status === 'processing').length;
+            
+            queueCount.textContent = queuedCount;
+            processingCount.textContent = processingCnt;
+            completedCount.textContent = completedRequests;
+            failedCount.textContent = failedRequests;
+            
+            // Update header stats
+            headerQueueCount.textContent = queuedCount;
+            headerProcessingCount.textContent = processingCnt;
+            headerCompletedCount.textContent = completedRequests;
+            
+            // Update requests display
+            updateRequestsDisplay();
+        }
+        
+        // Update requests display
+        function updateRequestsDisplay() {
+            const container = requestsContainer;
+            
+            if (requestsData.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No active requests</p>
+                        <small>Upload files to start generating videos</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            // Sort requests: processing first, then queued, then completed/failed
+            const sortedRequests = [...requestsData].sort((a, b) => {
+                const statusOrder = { processing: 0, queued: 1, completed: 2, failed: 3 };
+                return statusOrder[a.status] - statusOrder[b.status];
+            });
+            
+            sortedRequests.forEach(request => {
+                const item = createRequestItem(request);
+                container.appendChild(item);
+            });
+        }
+        
+        // Create request item element
+        function createRequestItem(request) {
+            const item = document.createElement('div');
+            item.className = `request-item ${request.status}`;
+            item.id = `request-${request.request_id}`;
+            
+            const shortId = request.request_id.substring(0, 8);
+            const timestamp = new Date(request.timestamp).toLocaleTimeString();
+            
+            let statusIcon = '';
+            let statusText = '';
+            let actions = '';
+            let progressBar = '';
+            let metadata = '';
+            
+            switch (request.status) {
+                case 'queued':
+                    statusIcon = 'fas fa-clock';
+                    statusText = 'Queued';
+                    if (request.position_in_queue) {
+                        metadata = `Position in queue: ${request.position_in_queue}`;
+                    }
+                    break;
+                case 'processing':
+                    statusIcon = 'fas fa-cog fa-spin';
+                    statusText = 'Processing';
+                    progressBar = `
+                        <div class="request-progress">
+                            <div class="progress-bar indeterminate"></div>
+                        </div>
+                    `;
+                    break;
+                case 'completed':
+                    statusIcon = 'fas fa-check-circle';
+                    statusText = 'Completed';
+                    actions = `
+                        <div class="request-actions">
+                            <a href="/api/result/${request.request_id}" class="action-btn download-btn" download>
+                                <i class="fas fa-download"></i>
+                                Download Video
+                            </a>
+                        </div>
+                    `;
+                    break;
+                case 'failed':
+                    statusIcon = 'fas fa-exclamation-triangle';
+                    statusText = 'Failed';
+                    actions = `
+                        <div class="request-actions">
+                            <button class="action-btn retry-btn" onclick="retryRequest('${request.request_id}')">
+                                <i class="fas fa-redo"></i>
+                                Retry
+                            </button>
+                        </div>
+                    `;
+                    break;
+            }
+            
+            item.innerHTML = `
+                <div class="request-header">
+                    <span class="request-id">${shortId}</span>
+                    <span class="request-status status-${request.status}">
+                        <i class="${statusIcon}"></i>
+                        ${statusText}
+                    </span>
+                </div>
+                <div class="request-message">${request.message}</div>
+                <div class="request-meta">
+                    <span>Created: ${timestamp}</span>
+                    <span>${metadata}</span>
+                </div>
+                ${progressBar}
+                ${actions}
+            `;
+            
+            return item;
+        }
+        
+        // Update specific request status
+        function updateRequestStatus(data) {
+            // Update in data array
+            const requestIndex = requestsData.findIndex(r => r.request_id === data.request_id);
+            if (requestIndex !== -1) {
+                requestsData[requestIndex] = { ...requestsData[requestIndex], ...data };
+            } else {
+                requestsData.push(data);
+            }
+            
+            // Update counters for completed/failed
+            if (data.status === 'completed') {
+                completedRequests++;
+                
+                // Add to completed videos display
+                const completedVideo = {
+                    request_id: data.request_id,
+                    timestamp: data.timestamp || new Date().toISOString(),
+                    prompt: requestsData[requestIndex]?.prompt || data.prompt || 'No prompt provided',
+                    result_url: data.result_url
+                };
+                addCompletedVideo(completedVideo);
+                
+            } else if (data.status === 'failed') {
+                failedRequests++;
+            }
+            
+            // Update display
+            updateRequestsDisplay();
+            updateQueueDisplay({ requests: requestsData });
+        }
+        
+        // Update request progress
+        function updateRequestProgress(data) {
+            const item = document.getElementById(`request-${data.request_id}`);
+            if (item) {
+                const messageElement = item.querySelector('.request-message');
+                if (messageElement) {
+                    messageElement.textContent = data.message;
+                }
+            }
+        }
+        
+        // Retry request
+        function retryRequest(requestId) {
+            // Implementation for retry functionality
+            showNotification('Retry functionality not implemented yet', 'warning');
+        }
+        
+        // Show notification
+        function showNotification(message, type = 'info') {
+            const notificationEl = notification;
+            notificationEl.textContent = message;
+            notificationEl.className = `notification ${type} show`;
+            
+            setTimeout(() => {
+                notificationEl.className = 'notification';
+            }, 5000);
+        }
+        
+        // Completed Videos Management
+        let completedVideos = [];
+        
+        function addCompletedVideo(videoData) {
+            completedVideos.unshift(videoData); // Add to beginning
+            updateCompletedVideosDisplay();
+        }
+        
+        function updateCompletedVideosDisplay() {
+            const container = completedVideosContainer;
+            
+            if (completedVideos.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-film"></i>
+                        <p>No completed videos yet</p>
+                        <small>Generated videos will appear here</small>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = '';
+            
+            completedVideos.forEach(video => {
+                const videoItem = createVideoItem(video);
+                container.appendChild(videoItem);
+            });
+        }
+        
+        function createVideoItem(video) {
+            const item = document.createElement('div');
+            item.className = 'video-item';
+            item.id = `video-${video.request_id}`;
+            
+            const shortId = video.request_id.substring(0, 8);
+            const timestamp = new Date(video.timestamp).toLocaleString();
+            const videoUrl = `/api/result/${video.request_id}`;
+            
+            // Truncate prompt for display
+            let displayPrompt = video.prompt || 'No prompt provided';
+            if (displayPrompt.length > 100) {
+                displayPrompt = displayPrompt.substring(0, 100) + '...';
+            }
+            
+            item.innerHTML = `
+                <div class="video-thumbnail">
+                    <video preload="metadata" muted>
+                        <source src="${videoUrl}" type="video/mp4">
+                        Your browser does not support the video tag.
+                    </video>
+                    <div class="play-overlay" onclick="playVideo('${video.request_id}')">
+                        <i class="fas fa-play"></i>
+                    </div>
+                </div>
+                <div class="video-info">
+                    <div class="video-title">Video ${shortId}</div>
+                    <div class="video-meta">
+                        <span><i class="fas fa-clock"></i> ${timestamp}</span>
+                        <span><i class="fas fa-magic"></i> lightx2v</span>
+                    </div>
+                    <div class="video-prompt">${displayPrompt}</div>
+                </div>
+                <div class="video-actions">
+                    <a href="${videoUrl}" class="video-action-btn video-download-btn" download>
+                        <i class="fas fa-download"></i>
+                        Download
+                    </a>
+                    <button class="video-action-btn video-share-btn" onclick="shareVideo('${video.request_id}')">
+                        <i class="fas fa-share"></i>
+                        Share
+                    </button>
+                    <button class="video-action-btn video-delete-btn" onclick="deleteVideo('${video.request_id}')">
+                        <i class="fas fa-trash"></i>
+                        Delete
+                    </button>
+                </div>
+            `;
+            
+            return item;
+        }
+        
+        function playVideo(requestId) {
+            const videoElement = document.querySelector(`#video-${requestId} video`);
+            const overlay = document.querySelector(`#video-${requestId} .play-overlay`);
+            
+            if (videoElement) {
+                if (videoElement.paused) {
+                    videoElement.play();
+                    videoElement.controls = true;
+                    overlay.style.display = 'none';
+                    
+                    videoElement.addEventListener('pause', () => {
+                        overlay.style.display = 'flex';
+                        videoElement.controls = false;
+                    });
+                    
+                    videoElement.addEventListener('ended', () => {
+                        overlay.style.display = 'flex';
+                        videoElement.controls = false;
+                    });
+                } else {
+                    videoElement.pause();
+                    overlay.style.display = 'flex';
+                    videoElement.controls = false;
+                }
+            }
+        }
+        
+        function shareVideo(requestId) {
+            const videoUrl = `${window.location.origin}/api/result/${requestId}`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: `InfiniteTalk Video ${requestId.substring(0, 8)}`,
+                    text: 'Check out this AI-generated video!',
+                    url: videoUrl
+                }).catch(err => console.log('Error sharing:', err));
+            } else {
+                // Fallback: copy to clipboard
+                navigator.clipboard.writeText(videoUrl).then(() => {
+                    showNotification('Video URL copied to clipboard!', 'success');
+                }).catch(() => {
+                    showNotification('Could not copy URL', 'error');
+                });
+            }
+        }
+        
+        function deleteVideo(requestId) {
+            if (confirm('Are you sure you want to delete this video? This action cannot be undone.')) {
+                fetch(`/api/result/${requestId}`, {
+                    method: 'DELETE'
+                }).then(response => {
+                    if (response.ok) {
+                        completedVideos = completedVideos.filter(v => v.request_id !== requestId);
+                        updateCompletedVideosDisplay();
+                        showNotification('Video deleted successfully', 'success');
+                    } else {
+                        showNotification('Failed to delete video', 'error');
+                    }
+                }).catch(error => {
+                    showNotification('Error deleting video', 'error');
+                });
+            }
+        }
+        
+        // Heartbeat to keep connection alive
+        setInterval(() => {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                ws.send(JSON.stringify({type: 'ping'}));
+            }
+        }, 30000);
+        
+        // Initialize
+        updateConnectionStatus('connecting');
+        connectWebSocket();
+        updateCompletedVideosDisplay(); // Initialize empty state
+        
+        // Load initial queue status
+        fetch('/api/queue')
+            .then(response => response.json())
+            .then(data => updateQueueDisplay(data))
+            .catch(error => console.error('Error loading initial queue status:', error));
+    </script>
+</body>
+</html>
