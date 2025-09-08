@@ -13,6 +13,7 @@ from safetensors.torch import load_file
 from optimum.quanto import quantize, freeze, qint8,requantize
 
 from .tokenizers import HuggingfaceTokenizer
+from ...src.utils import get_device
 
 __all__ = [
     'T5Model',
@@ -480,7 +481,7 @@ class T5EncoderModel:
         self,
         text_len,
         dtype=torch.bfloat16,
-        device=torch.cuda.current_device(),
+        device=get_device(),
         checkpoint_path=None,
         tokenizer_path=None,
         shard_fn=None,

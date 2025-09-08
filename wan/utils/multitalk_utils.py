@@ -3,6 +3,7 @@ from einops import rearrange
 
 import torch
 import torch.nn as nn
+from ...src.utils import get_device
 
 from xfuser.core.distributed import (
     get_sequence_parallel_rank,
@@ -41,8 +42,9 @@ ASPECT_RATIO_960 = {
 
 
 def torch_gc():
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
+    if get_device().type == 'cuda':
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 
 

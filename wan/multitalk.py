@@ -15,9 +15,10 @@ from PIL import Image
 
 import numpy as np
 import torch
-import torch.cuda.amp as amp
+import torch.amp as amp
 import torch.distributed as dist
 import torchvision.transforms as transforms
+from ..src.utils import get_device
 import torch.nn.functional as F
 import torch.nn as nn
 from tqdm import tqdm
@@ -39,8 +40,9 @@ from optimum.quanto import quantize, freeze, qint8,requantize
 import optimum.quanto.nn.qlinear as qlinear
 
 def torch_gc():
-    torch.cuda.empty_cache()
-    torch.cuda.ipc_collect()
+    if get_device().type == 'cuda':
+        torch.cuda.empty_cache()
+        torch.cuda.ipc_collect()
 
 def to_param_dtype_fp32only(model, param_dtype):
     for module in model.modules():
@@ -154,7 +156,7 @@ class InfiniteTalkPipeline:
         """
         if quant is not None and quant not in ("int8", "fp8"):
             raise ValueError("quant must be 'int8', 'fp8', or None(default fp32 model)")
-        self.device = torch.device(f"cuda:{device_id}")
+        self.device = get_device()
         self.config = config
         self.rank = rank
         self.use_usp = use_usp
@@ -370,7 +372,8 @@ class InfiniteTalkPipeline:
                 else:
                     model.to(self.device)
         # fresh the cuda cache
-        torch.cuda.empty_cache()
+        if get_device().type == 'cuda':
+            torch.cuda.empty_cache()
 
    
     def generate_infinitetalk(self,
@@ -510,7 +513,8 @@ class InfiniteTalkPipeline:
         # set random seed and init noise
         seed = seed if seed >= 0 else random.randint(0, 99999999)
         torch.manual_seed(seed)
-        torch.cuda.manual_seed_all(seed)
+        if get_device().type == 'cuda':
+            torch.cuda.manual_seed_all(seed)
         np.random.seed(seed)
         random.seed(seed)
         torch.backends.cudnn.deterministic = True
@@ -832,7 +836,8 @@ class InfiniteTalkPipeline:
             
             torch_gc()
             if offload_model:    
-                torch.cuda.synchronize()
+                if get_device().type == 'cuda':
+                    torch.cuda.synchronize()
             if dist.is_initialized():
                 dist.barrier()
         
