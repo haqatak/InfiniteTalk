@@ -19,4 +19,5 @@ optimum-quanto==0.2.6
 scenedetect
 moviepy==1.0.3
 eva-decord
-flashy-attention==0.0.4
+mlx
+git+https://github.com/haqatak/flashy-attention.git
