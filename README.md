@@ -136,12 +136,13 @@ pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https
 pip install -U xformers==0.0.28 --index-url https://download.pytorch.org/whl/cu121
 ```
 #### 2. Flashy-attention installation:
+For Apple Silicon users, `flashy-attention` is used instead of `flash-attention`. It can be installed directly from the git repository.
 ```
 pip install misaki[en]
 pip install ninja 
 pip install psutil 
 pip install packaging 
-pip install flashy-attention
+pip install git+https://github.com/haqatak/flashy-attention.git
 ```
 
 #### 3. Other dependencies
