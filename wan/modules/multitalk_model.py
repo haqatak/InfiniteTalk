@@ -3,9 +3,10 @@ import math
 import numpy as np
 import os
 import torch
-import torch.cuda.amp as amp
+import torch.amp as amp
 import torch.nn as nn
 import torch.nn.functional as F
+from ...src.utils import get_device
 
 from einops import rearrange
 from diffusers import ModelMixin
@@ -38,7 +39,7 @@ def sinusoidal_embedding_1d(dim, position):
     return x
 
 
-@amp.autocast(enabled=False)
+@amp.autocast(device_type=get_device().type, enabled=False)
 def rope_params(max_seq_len, dim, theta=10000):
 
     assert dim % 2 == 0
@@ -50,7 +51,7 @@ def rope_params(max_seq_len, dim, theta=10000):
     return freqs
 
 
-@amp.autocast(enabled=False)
+@amp.autocast(device_type=get_device().type, enabled=False)
 def rope_apply(x, grid_sizes, freqs):
     s, n, c = x.size(1), x.size(2), x.size(3) // 2
 

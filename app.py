@@ -21,6 +21,7 @@ import subprocess
 import wan
 from wan.configs import SIZE_CONFIGS, SUPPORTED_SIZES, WAN_CONFIGS
 from wan.utils.utils import cache_image, cache_video, str2bool
+from src.utils import get_device
 from wan.utils.multitalk_utils import save_video_ffmpeg
 from kokoro import KPipeline
 from transformers import Wav2Vec2FeatureExtractor
@@ -298,7 +299,7 @@ def _init_logging(rank):
     else:
         logging.basicConfig(level=logging.ERROR)
 
-def get_embedding(speech_array, wav2vec_feature_extractor, audio_encoder, sr=16000, device='cpu'):
+def get_embedding(speech_array, wav2vec_feature_extractor, audio_encoder, sr=16000, device=get_device()):
     audio_duration = len(speech_array) / sr
     video_length = audio_duration * 25 # Assume the video fps is 25
 
@@ -432,7 +433,7 @@ def run_graio_demo(args):
     rank = int(os.getenv("RANK", 0))
     world_size = int(os.getenv("WORLD_SIZE", 1))
     local_rank = int(os.getenv("LOCAL_RANK", 0))
-    device = local_rank
+    device = get_device()
     _init_logging(rank)
 
     if args.offload_model is None:
@@ -440,7 +441,6 @@ def run_graio_demo(args):
         logging.info(
             f"offload_model is not specified, set to {args.offload_model}.")
     if world_size > 1:
-        torch.cuda.set_device(local_rank)
         dist.init_process_group(
             backend="nccl",
             init_method="env://",
