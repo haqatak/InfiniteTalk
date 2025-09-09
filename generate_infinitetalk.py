@@ -2,6 +2,11 @@
 import argparse
 import logging
 import os
+import torch
+if not torch.cuda.is_available():
+    def get_device_name(*args, **kwargs):
+        return "MPS"
+    torch.cuda.get_device_name = get_device_name
 import sys
 import json
 import warnings
