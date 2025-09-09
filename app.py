@@ -12,6 +12,10 @@ if not torch.cuda.is_available():
     def _get_cuda_arch_flags(*args, **kwargs):
         return []
     cpp_extension._get_cuda_arch_flags = _get_cuda_arch_flags
+    import xfuser.envs as envs
+    def get_torch_distributed_backend():
+        return 'gloo'
+    envs.get_torch_distributed_backend = get_torch_distributed_backend
 import sys
 import json
 import warnings
