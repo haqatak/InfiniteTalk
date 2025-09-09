@@ -13,9 +13,11 @@ scikit-image
 loguru
 gradio>=5.0.0
 numpy>=1.23.5,<2
-xfuser>=0.4.1
+git+https://github.com/haqatak/xDiT.git@f2c623f9b25a2f87a320286557e1658b33f51be1
 pyloudnorm
 optimum-quanto==0.2.6
 scenedetect
 moviepy==1.0.3
-decord
+eva-decord
+mlx
+git+https://github.com/haqatak/flashy-attention.git

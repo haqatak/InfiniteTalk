@@ -5,6 +5,7 @@ from functools import partial
 import torch
 from torch.distributed.fsdp import FullyShardedDataParallel as FSDP
 from torch.distributed.fsdp import MixedPrecision, ShardingStrategy
+from src.utils import get_device
 from torch.distributed.fsdp.wrap import lambda_auto_wrap_policy
 from torch.distributed.utils import _free_storage
 
@@ -40,4 +41,5 @@ def free_model(model):
             _free_storage(m._handle.flat_param.data)
     del model
     gc.collect()
-    torch.cuda.empty_cache()
+    if get_device().type == 'cuda':
+        torch.cuda.empty_cache()

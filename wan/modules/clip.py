@@ -6,6 +6,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from src.utils import get_device
 import torchvision.transforms as T
 
 from .attention import flash_attention
@@ -537,6 +538,6 @@ class CLIPModel:
         videos = self.transforms.transforms[-1](videos.mul_(0.5).add_(0.5))
 
         # forward
-        with torch.cuda.amp.autocast(dtype=self.dtype):
+        with torch.amp.autocast(device_type=get_device().type, dtype=self.dtype):
             out = self.model.visual(videos, use_31_block=True)
             return out

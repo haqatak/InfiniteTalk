@@ -135,13 +135,14 @@ conda activate multitalk
 pip install torch==2.4.1 torchvision==0.19.1 torchaudio==2.4.1 --index-url https://download.pytorch.org/whl/cu121
 pip install -U xformers==0.0.28 --index-url https://download.pytorch.org/whl/cu121
 ```
-#### 2. Flash-attn installation:
+#### 2. Flashy-attention installation:
+For Apple Silicon users, `flashy-attention` is used instead of `flash-attention`. It can be installed directly from the git repository.
 ```
 pip install misaki[en]
 pip install ninja 
 pip install psutil 
 pip install packaging 
-pip install flash_attn==2.7.4.post1
+pip install git+https://github.com/haqatak/flashy-attention.git
 ```
 
 #### 3. Other dependencies
@@ -149,6 +150,10 @@ pip install flash_attn==2.7.4.post1
 pip install -r requirements.txt
 conda install -c conda-forge librosa
 ```
+
+**Note for Apple Silicon (MPS) users:**
+
+This repository supports Apple Silicon (MPS) devices. The dependencies have been updated to ensure compatibility. `decord` has been replaced with `eva-decord`, and `flash-attention` has been replaced with `flashy-attention`. These changes are reflected in the `requirements.txt` file.
 
 #### 4. FFmeg installation
 ```

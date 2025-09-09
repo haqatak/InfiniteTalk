@@ -2,6 +2,13 @@ from contextlib import contextmanager
 
 import torch
 
+def get_device():
+    if torch.cuda.is_available():
+        return torch.device("cuda")
+    if torch.backends.mps.is_available():
+        return torch.device("mps")
+    return torch.device("cpu")
+
 @contextmanager
 def init_weights_on_device(device=torch.device("meta"), include_buffers: bool = False):
     old_register_parameter = torch.nn.Module.register_parameter

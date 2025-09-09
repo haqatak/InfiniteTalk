@@ -12,9 +12,10 @@ from contextlib import contextmanager
 from functools import partial
 
 import torch
-import torch.cuda.amp as amp
+import torch.amp as amp
 import torch.distributed as dist
 import torch.multiprocessing as mp
+from src.utils import get_device
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 from PIL import Image
@@ -68,7 +69,7 @@ class WanVace(WanT2V):
             t5_cpu (`bool`, *optional*, defaults to False):
                 Whether to place T5 model on CPU. Only works without t5_fsdp.
         """
-        self.device = torch.device(f"cuda:{device_id}")
+        self.device = get_device()
         self.config = config
         self.rank = rank
         self.t5_cpu = t5_cpu
@@ -397,7 +398,7 @@ class WanVace(WanT2V):
         no_sync = getattr(self.model, 'no_sync', noop_no_sync)
 
         # evaluation mode
-        with amp.autocast(dtype=self.param_dtype), torch.no_grad(), no_sync():
+        with amp.autocast(device_type=get_device().type, dtype=self.param_dtype), torch.no_grad(), no_sync():
 
             if sample_solver == 'unipc':
                 sample_scheduler = FlowUniPCMultistepScheduler(
@@ -460,7 +461,8 @@ class WanVace(WanT2V):
             x0 = latents
             if offload_model:
                 self.model.cpu()
-                torch.cuda.empty_cache()
+                if get_device().type == 'cuda':
+                    torch.cuda.empty_cache()
             if self.rank == 0:
                 videos = self.decode_latent(x0, input_ref_images)
 
@@ -468,7 +470,8 @@ class WanVace(WanT2V):
         del sample_scheduler
         if offload_model:
             gc.collect()
-            torch.cuda.synchronize()
+            if get_device().type == 'cuda':
+                torch.cuda.synchronize()
         if dist.is_initialized():
             dist.barrier()
 
@@ -497,7 +500,7 @@ class WanVaceMP(WanVace):
         self.ring_size = ring_size
         self.dynamic_load()
 
-        self.device = 'cpu' if torch.cuda.is_available() else 'cpu'
+        self.device = get_device()
         self.vid_proc = VaceVideoProcessor(
             downsample=tuple(
                 [x * y for x, y in zip(config.vae_stride, config.patch_size)]),
@@ -513,7 +516,7 @@ class WanVaceMP(WanVace):
         if hasattr(self, 'inference_pids') and self.inference_pids is not None:
             return
         gpu_infer = os.environ.get(
-            'LOCAL_WORLD_SIZE') or torch.cuda.device_count()
+            'LOCAL_WORLD_SIZE') or 1 if get_device().type != 'cuda' else torch.cuda.device_count()
         pmi_rank = int(os.environ['RANK'])
         pmi_world_size = int(os.environ['WORLD_SIZE'])
         in_q_list = [
@@ -566,9 +569,10 @@ class WanVaceMP(WanVace):
             rank = pmi_rank * gpu_infer + gpu
             print("world_size", world_size, "rank", rank, flush=True)
 
-            torch.cuda.set_device(gpu)
+            if get_device().type == 'cuda':
+                torch.cuda.set_device(gpu)
             dist.init_process_group(
-                backend='nccl',
+                backend='nccl' if get_device().type == 'cuda' else 'gloo',
                 init_method='env://',
                 rank=rank,
                 world_size=world_size)
@@ -633,7 +637,8 @@ class WanVaceMP(WanVace):
             model = shard_fn(model)
             sample_neg_prompt = self.config.sample_neg_prompt
 
-            torch.cuda.empty_cache()
+            if get_device().type == 'cuda':
+                torch.cuda.empty_cache()
             event = initialized_events[gpu]
             in_q = in_q_list[gpu]
             event.set()
@@ -748,7 +753,8 @@ class WanVaceMP(WanVace):
                             generator=seed_g)[0]
                         latents = [temp_x0.squeeze(0)]
 
-                    torch.cuda.empty_cache()
+                    if get_device().type == 'cuda':
+                        torch.cuda.empty_cache()
                     x0 = latents
                     if rank == 0:
                         videos = self.decode_latent(
@@ -758,7 +764,8 @@ class WanVaceMP(WanVace):
                 del sample_scheduler
                 if offload_model:
                     gc.collect()
-                    torch.cuda.synchronize()
+                    if get_device().type == 'cuda':
+                        torch.cuda.synchronize()
                 if dist.is_initialized():
                     dist.barrier()
 

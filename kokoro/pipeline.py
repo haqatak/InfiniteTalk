@@ -7,6 +7,7 @@ from typing import Callable, Generator, List, Optional, Tuple, Union
 import re
 import torch
 import os
+from src.utils import get_device
 
 ALIASES = {
     'en-us': 'a',
@@ -95,19 +96,7 @@ class KPipeline:
         if isinstance(model, KModel):
             self.model = model
         elif model:
-            if device == 'cuda' and not torch.cuda.is_available():
-                raise RuntimeError("CUDA requested but not available")
-            if device == 'mps' and not torch.backends.mps.is_available():
-                raise RuntimeError("MPS requested but not available")
-            if device == 'mps' and os.environ.get('PYTORCH_ENABLE_MPS_FALLBACK') != '1':
-                raise RuntimeError("MPS requested but fallback not enabled")
-            if device is None:
-                if torch.cuda.is_available():
-                    device = 'cuda'
-                elif os.environ.get('PYTORCH_ENABLE_MPS_FALLBACK') == '1' and torch.backends.mps.is_available():
-                    device = 'mps'
-                else:
-                    device = 'cpu'
+            device = get_device()
             try:
                 self.model = KModel(repo_id=repo_id, config=config).to(device).eval()
             except RuntimeError as e:
