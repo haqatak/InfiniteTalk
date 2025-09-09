@@ -6,7 +6,7 @@ import torch
 import torch.amp as amp
 import torch.nn as nn
 import torch.nn.functional as F
-from ...src.utils import get_device
+from src.utils import get_device
 
 from einops import rearrange
 from diffusers import ModelMixin

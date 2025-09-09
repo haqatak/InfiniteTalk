@@ -13,7 +13,7 @@ import torch
 import torch.amp as amp
 import torch.distributed as dist
 from tqdm import tqdm
-from ..src.utils import get_device
+from src.utils import get_device
 
 from .distributed.fsdp import shard_model
 from .modules.model import WanModel

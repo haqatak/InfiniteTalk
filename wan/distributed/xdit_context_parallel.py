@@ -3,7 +3,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.amp as amp
-from ...src.utils import get_device
+from src.utils import get_device
 from xfuser.core.distributed import (
     get_sequence_parallel_rank,
     get_sequence_parallel_world_size,

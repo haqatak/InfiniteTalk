@@ -3,7 +3,7 @@ from einops import rearrange
 
 import torch
 import torch.nn as nn
-from ...src.utils import get_device
+from src.utils import get_device
 
 from xfuser.core.distributed import (
     get_sequence_parallel_rank,

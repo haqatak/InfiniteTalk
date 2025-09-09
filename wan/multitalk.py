@@ -18,7 +18,7 @@ import torch
 import torch.amp as amp
 import torch.distributed as dist
 import torchvision.transforms as transforms
-from ..src.utils import get_device
+from src.utils import get_device
 import torch.nn.functional as F
 import torch.nn as nn
 from tqdm import tqdm
