@@ -7,6 +7,10 @@ if not torch.cuda.is_available():
     def get_device_name(*args, **kwargs):
         return "MPS"
     torch.cuda.get_device_name = get_device_name
+    from torch.utils import cpp_extension
+    def _get_cuda_arch_flags(*args, **kwargs):
+        return []
+    cpp_extension._get_cuda_arch_flags = _get_cuda_arch_flags
 import sys
 import json
 import warnings
