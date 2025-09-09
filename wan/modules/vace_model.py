@@ -3,7 +3,7 @@ import torch
 import torch.amp as amp
 import torch.nn as nn
 from diffusers.configuration_utils import register_to_config
-from ...src.utils import get_device
+from src.utils import get_device
 
 from .model import WanAttentionBlock, WanModel, sinusoidal_embedding_1d
 

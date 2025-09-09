@@ -15,7 +15,7 @@ import torch
 import torch.amp as amp
 import torch.distributed as dist
 import torch.multiprocessing as mp
-from ..src.utils import get_device
+from src.utils import get_device
 import torch.nn.functional as F
 import torchvision.transforms.functional as TF
 from PIL import Image

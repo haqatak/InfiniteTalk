@@ -6,7 +6,7 @@ import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from ...src.utils import get_device
+from src.utils import get_device
 import torchvision.transforms as T
 
 from .attention import flash_attention
