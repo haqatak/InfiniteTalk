@@ -8,7 +8,11 @@ from xfuser.core.distributed import (
     get_sequence_parallel_world_size,
     get_sp_group,
 )
-import xformers.ops
+try:
+    import xformers.ops
+    XFORMERS_AVAILABLE = True
+except ImportError:
+    XFORMERS_AVAILABLE = False
 
 try:
     import flashy
@@ -143,17 +147,25 @@ class SingleStreamAttention(nn.Module):
         encoder_k = rearrange(encoder_k, "B H M K -> B M H K")
         encoder_v = rearrange(encoder_v, "B H M K -> B M H K")
 
-        if enable_sp:
-            # context parallel
-            sp_size = get_sequence_parallel_world_size()
-            sp_rank = get_sequence_parallel_rank()
-            visual_seqlen, _ = split_token_counts_and_frame_ids(N_t, N_h * N_w, sp_size, sp_rank)
-            assert kv_seq is not None, f"kv_seq should not be None."
-            attn_bias = xformers.ops.fmha.attn_bias.BlockDiagonalMask.from_seqlens(visual_seqlen, kv_seq)
+        if XFORMERS_AVAILABLE:
+            if enable_sp:
+                # context parallel
+                sp_size = get_sequence_parallel_world_size()
+                sp_rank = get_sequence_parallel_rank()
+                visual_seqlen, _ = split_token_counts_and_frame_ids(N_t, N_h * N_w, sp_size, sp_rank)
+                assert kv_seq is not None, f"kv_seq should not be None."
+                attn_bias = xformers.ops.fmha.attn_bias.BlockDiagonalMask.from_seqlens(visual_seqlen, kv_seq)
+            else:
+                attn_bias = None
+            x = xformers.ops.memory_efficient_attention(q, encoder_k, encoder_v, attn_bias=attn_bias, op=None,)
+            x = rearrange(x, "B M H K -> B H M K")
         else:
-            attn_bias = None
-        x = xformers.ops.memory_efficient_attention(q, encoder_k, encoder_v, attn_bias=attn_bias, op=None,)
-        x = rearrange(x, "B M H K -> B H M K") 
+            # Fallback to torch's scaled_dot_product_attention
+            q = q.transpose(1, 2)
+            encoder_k = encoder_k.transpose(1, 2)
+            encoder_v = encoder_v.transpose(1, 2)
+            x = torch.nn.functional.scaled_dot_product_attention(q, encoder_k, encoder_v, attn_mask=None, is_causal=False)
+            x = x.transpose(1, 2)
 
         # linear transform
         x_output_shape = (B, N, C)
@@ -266,8 +278,16 @@ class SingleStreamMutiAttention(SingleStreamAttention):
         q = rearrange(q, "B H M K -> B M H K")
         encoder_k = rearrange(encoder_k, "B H M K -> B M H K")
         encoder_v = rearrange(encoder_v, "B H M K -> B M H K")
-        x = xformers.ops.memory_efficient_attention(q, encoder_k, encoder_v, attn_bias=None, op=None,)
-        x = rearrange(x, "B M H K -> B H M K")
+        if XFORMERS_AVAILABLE:
+            x = xformers.ops.memory_efficient_attention(q, encoder_k, encoder_v, attn_bias=None, op=None,)
+            x = rearrange(x, "B M H K -> B H M K")
+        else:
+            # Fallback to torch's scaled_dot_product_attention
+            q = q.transpose(1, 2)
+            encoder_k = encoder_k.transpose(1, 2)
+            encoder_v = encoder_v.transpose(1, 2)
+            x = torch.nn.functional.scaled_dot_product_attention(q, encoder_k, encoder_v, attn_mask=None, is_causal=False)
+            x = x.transpose(1, 2)
 
         # linear transform
         x_output_shape = (B, N, C)
